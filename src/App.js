@@ -15,26 +15,24 @@ function App() {
   const [currentImage, setCurrentImage] = useState(defaultImage)
   const [currentText, setCurrentText] = useState(defaultText)
   const [selectedSound, setSelectedSound] = useState()
+  const [success, setSuccess] = useState(0)
+  const [fail, setFail] = useState(0)
 
 
-  useEffect(() => {
-
-
-
-
-
-
-
-  }, [])
+  const currentSound = usePlaySound(selectedSound)
 
   useEventListener('keydown', (e) => {
 
+    console.log(e)
     if (currentQuestion.key && !finished) {
 
       if (currentQuestion.key === e.key) {
-        playSound(defaultSuccess)
+        setSuccess(success+1)
+        setSelectedSound(defaultSuccess)
       } else {
-        playSound(defaultAww)
+        setFail(fail + 1)
+
+        setSelectedSound(defaultAww)
       }
 
       setFinished(true)
@@ -43,20 +41,45 @@ function App() {
 
   });
 
+  function usePlaySound(soundLink) {
+
+
+    const [sound, setSound] = useState();
+
+
+    useEffect(() => {
+
+      setSound(new Audio(soundLink))
+
+
+
+    }, [soundLink])
+
+
+
+    return sound;
+
+  }
+
   useEffect(() => {
-    if (selectedSound) {
-      var audio = new Audio(selectedSound);
-      audio.loop = false;
-      audio.play();
+
+    if (currentSound) {
+      currentSound.play()
     }
 
 
-  }, [selectedSound])
+  }, [currentSound])
+
+
+
+
+
+
 
 
   useEffect(() => {
     console.log(currentQuestion)
-    if (currentQuestion) {
+    if (!currentQuestion.loading) {
 
       setCurrentImage(currentQuestion.image)
       setCurrentText(currentQuestion.text)
@@ -66,15 +89,12 @@ function App() {
 
   }, [currentQuestion])
 
-  function playSound(sound) {
-    console.log(sound)
 
-  }
-
-  function getNextQuestion() {
-
-    setCurrentQuestion({})
+  const getNextQuestion = () => {
+ 
+    setCurrentQuestion({ loading: true })
     setFinished(false)
+   
 
     fetch('/api/nextLetter').then((response) => { return response.json() }).then((data) => {
 
@@ -86,13 +106,16 @@ function App() {
     })
   }
 
+
+
   function playCurrentQuestion() {
 
-    if (!currentQuestion.file) {
+    if (!currentQuestion.file && !currentQuestion.loading) {
       setCurrentText("Question not selected yet. Click next to select a question")
     }
     else {
-      playSound(currentQuestion.file)
+      console.log(currentQuestion.file)
+      setSelectedSound(currentQuestion.file)
     }
 
   }
@@ -102,14 +125,19 @@ function App() {
 
 
 
+
   return (
     <div className="App">
 
-      <div><button onClick={() => { getNextQuestion() }} className="button is-large">Next</button></div>
-      <div id="scoreboard">
-        <div></div>
-        <div></div>
+      <div style={{ margin: "10px" }}>
+        <button id="next-button" onClick={() => { getNextQuestion() }} className="button is-large is-warning">Next</button>
       </div>
+      <div id="scoreboard">
+      <div className="has-background-danger"  style={{ color: "#fff", padding: "20px", margin: "10px", borderRadius: "10px" }}  id="failed-answers">{fail}</div>
+        <div className="has-background-success" style={{ color: "#fff", padding: "20px", margin: "10px", borderRadius: "10px" }} id="succesful-answers">{success}</div>
+  
+      </div>
+
 
       <div style={{ display: "flex", justifyContent: "center" }}>
         <div className="card" style={{ width: "300px" }}>
@@ -124,16 +152,27 @@ function App() {
             </p>
             <div><button onClick={() => { playCurrentQuestion() }} className="button is-large">Play</button></div>
           </div>
-          <footer className="card-footer" style={{ display: currentQuestion.showFooter ? "flex" : "none" }}>
+          <footer className="card-footer" >
 
             <p className="card-footer-item">
               <span>
-                <button onClick={() => { setFinished(true); setSelectedSound(defaultAww) }} className="button is-large is-danger">Awwww</button>
+                <button className="button is-large is-danger" onClick={() => {
+                  setFinished(true);
+                  setFail(fail + 1)
+                  setSelectedSound(defaultAww)
+                }} >Awwww</button>
+
+
               </span>
             </p>
-            <p className="card-footer-item" onClick={getNextQuestion}>
+            <p className="card-footer-item" >
               <span>
-                <button onClick={() => { setFinished(true); setSelectedSound(defaultSuccess) }} className="button is-large is-success">Success</button>
+                <button id="success-button"
+                  onClick={() => { 
+                    setSuccess(success+1)
+                    setFinished(true); 
+                  setSelectedSound(defaultSuccess) }}
+                  className="button is-large is-success">Success</button>
               </span>
             </p>
 
